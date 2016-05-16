@@ -1,0 +1,66 @@
+{
+  "graphEdges": [
+    {
+      "source": "Yerevan",
+      "target": "Saint Petersburg"
+    },
+    {
+      "source": "Saint Petersburg",
+      "target": "Berlin"
+    },
+    {
+      "source": "Saint Petersburg",
+      "target": "London"
+    },
+    {
+      "source": "Saint Petersburg",
+      "target": "Kiev"
+    },
+    {
+      "source": "Kiev",
+      "target": "London"
+    },
+    {
+      "source": "Saint Petersburg",
+      "target": "Volgodonsk"
+    },
+    {
+      "source": "Yerevan",
+      "target": "Volgodonsk"
+    },
+    {
+      "source": "Volgodonsk",
+      "target": "Roma"
+    },
+    {
+      "source": "Volgodonsk",
+      "target": "Stockholm"
+    }
+  ],
+  "containers": [
+    {
+      "startTime": "2016-05-21 17:00:00",
+      "initialTermianl": "Berlin",
+      "quantity": "3",
+      "destination": "Kiev"
+    }
+//    {
+//      "startTime": "05/21/2016 17:15:00",
+//      "initialTermianl": "Yerevan",
+//      "quantity": "1",
+//      "destination": "London"
+//    },
+//    {
+//      "startTime": "06/21/2016 13:00:00",
+//      "initialTermianl": "Berlin",
+//      "quantity": "2",
+//      "destination": "Roma"
+//    },
+//    {
+//      "startTime": "06/21/2016 18:05:00",
+//      "initialTermianl": "Volgodonsk",
+//      "quantity": "4",
+//      "destination": "London"
+//    }
+  ]
+}
