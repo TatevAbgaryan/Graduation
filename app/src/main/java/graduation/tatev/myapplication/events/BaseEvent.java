@@ -24,7 +24,7 @@ public class BaseEvent {
         this.startTime = event.getStartTime();
         this.departureTerminal = event.getDepartureTerminal();
         this.conteiner = event.getConteiner();
-        this.destinationTerminal = event.getDestinationTerminal();
+        this.destinationTerminal = event.getDepartureTerminal();
         this.type = event.getType();
     }
 

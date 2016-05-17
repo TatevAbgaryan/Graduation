@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import graduation.tatev.myapplication.Utils.Utils;
 import graduation.tatev.myapplication.components.Container;
 import graduation.tatev.myapplication.components.Terminal;
 import graduation.tatev.myapplication.components.Truck;
@@ -46,7 +45,7 @@ public class ActivityDES extends AppCompatActivity implements OnMapReadyCallback
 
         //setContentView(R.layout.activity_main);
         GoogleMap mMap = null;
-        SupportMapFragment mapFragment = (  SupportMapFragment) getSupportFragmentManager()
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         new AsyncTask<Void, Void, Void>() {

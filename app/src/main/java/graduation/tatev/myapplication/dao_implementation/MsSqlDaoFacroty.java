@@ -36,4 +36,10 @@ public class MsSqlDaoFacroty implements DaoFactory {
         return new MsSqlTerminalDao(connection);
     }
 
-  }
+    @Override
+    public RouteDao getRouteDao(Connection connection) {
+        return new MsSqlRouteDao(connection);
+    }
+
+
+}

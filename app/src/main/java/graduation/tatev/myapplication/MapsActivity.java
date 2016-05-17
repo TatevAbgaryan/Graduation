@@ -1,30 +1,21 @@
 package graduation.tatev.myapplication;
 
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Point;
+import android.graphics.Color;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.SystemClock;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Window;
 import android.view.WindowManager;
-import android.view.animation.Interpolator;
-import android.view.animation.LinearInterpolator;
 
-import com.google.android.gms.maps.CameraUpdate;
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -38,9 +29,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import graduation.tatev.myapplication.Utils.OnTaskCompleted;
-import graduation.tatev.myapplication.Utils.RouteUtlis;
-import graduation.tatev.myapplication.Utils.Utils;
 import graduation.tatev.myapplication.components.Animation;
 import graduation.tatev.myapplication.components.Container;
 import graduation.tatev.myapplication.components.GraphEdge;
@@ -48,7 +36,7 @@ import graduation.tatev.myapplication.components.Terminal;
 import graduation.tatev.myapplication.components.Truck;
 import graduation.tatev.myapplication.events.BaseEvent;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, OnTaskCompleted {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private static int SIMULATION_DURATION = 3 * 7 * 24 * 60; //three week in minutes
     private static float UNIT = 15; //three week in minutes
@@ -65,9 +53,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private List<Animation> animationList;
     private GoogleMap mMap;
     private List<GraphEdge> graphEdges;
-    public List<PolylineOptions> poliLines;
-    private Bitmap terminalBitmap, truckBitmap, delayedTruckBitmap;
-    private Handler animHandler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,14 +60,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_maps);
-
-        terminalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.color_icons_green_home);
-        terminalBitmap = Bitmap.createScaledBitmap(terminalBitmap, 30, 45, true);
-        truckBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.truck);
-        truckBitmap = Bitmap.createScaledBitmap(truckBitmap, 30, 30, true);
-        delayedTruckBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.delayed_truck);
-        delayedTruckBitmap = Bitmap.createScaledBitmap(delayedTruckBitmap, 30, 30, true);
-
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -115,38 +92,35 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             protected void onPostExecute(Void result) {
                 super.onPostExecute(result);
                 Log.d("onPostExecute", "onPostExecute");
-                List<Marker> terminalMarkers = new ArrayList<>();
                 for (Terminal terminal : terminals) {
-                    terminalMarkers.add(createMarker(BitmapDescriptorFactory.fromBitmap(terminalBitmap), terminal.getLatitude(), terminal.getLongitude(), terminal.getName()));
+                    createMarker(terminal.getLatitude(), terminal.getLongitude(), terminal.getName());
                 }
-                drawGraph(terminalMarkers);
+                drawGraph();
                 beginSimulation();
             }
         }.execute();
     }
 
-    private void drawGraph(List<Marker> terninalMarkers) {
-        RouteUtlis utlis = new RouteUtlis(this);
-        utlis.drawRoutes(graphEdges);
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        for (Marker marker : terninalMarkers) {
-            builder.include(marker.getPosition());
+    private void drawGraph(){
+        for(GraphEdge edge : graphEdges){
+            PolylineOptions line =
+                    new PolylineOptions().add(new LatLng(edge.getStartPoint().getLatitude(), edge.getStartPoint().getLongitude()),
+                            new LatLng(edge.getEndPoint().getLatitude(), edge.getEndPoint().getLongitude()))
+                            .width(3).color(Color.parseColor("#37474F"));
+            mMap.addPolyline(line);
+
         }
-        LatLngBounds bounds = builder.build();
-        int padding = 0; // offset from edges of the map in pixels
-        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
-        mMap.animateCamera(cu);
     }
 
-    private Marker createMarker(BitmapDescriptor bitmap, double latitude, double longitude, String title) {
-        MarkerOptions markerOptions = new MarkerOptions()
+    private void createMarker(double latitude, double longitude, String title) {
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.color_icons_green_home);
+        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, 30, 45, true);
+               mMap.addMarker(new MarkerOptions()
                 .position(new LatLng(latitude, longitude))
                 .anchor(0.5f, 0.5f)
                 .title(title)
-                .icon(bitmap);
-        Marker marker = mMap.addMarker(markerOptions);
-        marker.showInfoWindow();
-        return marker;
+                        //  .snippet(snippet)
+                .icon(BitmapDescriptorFactory.fromBitmap(scaledBitmap)));
     }
 
     public void beginSimulation() {
@@ -160,9 +134,20 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 if (event.getDepartureTerminal().equals(terminal)) {
                     event.setType(BaseEvent.Type.DEPARTURE);
                     int tripDuration = (int) shortestDurationsMatrix[terminals.indexOf(event.getDepartureTerminal())][terminals.indexOf(event.getDestinationTerminal())];
-                    event.getConteiner().setRecoveryTime(new Date(event.getStartTime().getTime() + tripDuration * MILLISECOND));
+                    event.getConteiner().setRecoveryTime(new Date(event.getStartTime().getTime() + tripDuration * 1000));
                     int randomDelay = random.nextInt(60) - 30; // [-30,30] minute delay
-                    event.getConteiner().setArrivalTime(new Date(event.getStartTime().getTime() + (tripDuration + randomDelay) * MILLISECOND));
+                    event.getConteiner().setArrivalTime(new Date(event.getStartTime().getTime() + (tripDuration + randomDelay) * 1000));
+                    long diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(event.getStartTime().getTime() - startDate.getTime());
+                    int bucketIndex = (int) Math.ceil(diffInMinutes / UNIT);
+                    if (terminalEvents.get(bucketIndex) == null) {
+                        List<BaseEvent> list = new ArrayList<BaseEvent>();
+                        list.add(event);
+                        terminalEvents.set(bucketIndex, list);
+                    } else {
+                        terminalEvents.get(bucketIndex).add(event);
+                    }
+                } else if (event.getDestinationTerminal().equals(terminal)) {
+                    event.setType(BaseEvent.Type.ARRIVAL);
                     long diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(event.getStartTime().getTime() - startDate.getTime());
                     int bucketIndex = (int) Math.ceil(diffInMinutes / UNIT);
                     if (terminalEvents.get(bucketIndex) == null) {
@@ -173,18 +158,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         terminalEvents.get(bucketIndex).add(event);
                     }
                 }
-// else if (event.getDestinationTerminal().equals(terminal)) {
-//                    event.setType(BaseEvent.Type.ARRIVAL);
-//                    long diffInMinutes = TimeUnit.MILLISECONDS.toMinutes(event.getStartTime().getTime() - startDate.getTime());
-//                    int bucketIndex = (int) Math.ceil(diffInMinutes / UNIT);
-//                    if (terminalEvents.get(bucketIndex) == null) {
-//                        List<BaseEvent> list = new ArrayList<BaseEvent>();
-//                        list.add(event);
-//                        terminalEvents.set(bucketIndex, list);
-//                    } else {
-//                        terminalEvents.get(bucketIndex).add(event);
-//                    }
-//                }
             }
             terminalListMap.put(terminal, terminalEvents);
         }
@@ -192,20 +165,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         while (currentBucket < SIMULATION_DURATION) {
             for (Terminal terminal : terminals) {
                 List<BaseEvent> currentEvents = terminalListMap.get(terminal).get((int) (currentBucket / UNIT));
-                if (currentEvents == null) continue;
                 Map<Terminal, List<Container>> nowInTerminal = new HashMap<>();
                 List<Truck> trucksFromCurrentTerminal = new ArrayList<>();
+                if (currentEvents == null) continue;
                 for (BaseEvent event : currentEvents) {
                     // if it's destination terminal just remove event from list, otherwise detect next terminal for current containers
                     // group all containers in terminal by next terminal to understand how many trucks we need to be add in simulation
                     // and schedule next event.
                     if (event.getDestinationTerminal() != terminal) {
                         Terminal nextTerminal = terminals.get(shortestRoutesMatrix[terminals.indexOf(terminal)][terminals.indexOf(event.getDestinationTerminal())]);
-                        // count containers in terminal from this event
                         Container passContainer = new Container(event.getConteiner());
                         passContainer.setInitialTerminal(terminal);
                         passContainer.setFinalTerminal(nextTerminal);
-                        // group by destination terminals
                         if (nowInTerminal.containsKey(nextTerminal))
                             nowInTerminal.get(nextTerminal).add(passContainer);
                         else {
@@ -215,9 +186,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         }
                         // scheduling next event
                         BaseEvent next = new BaseEvent(event);
-                        next.setDepartureTerminal(nextTerminal);
+                        next.setDestinationTerminal(nextTerminal);
                         double durationToNextTerminal = shortestDurationsMatrix[terminals.indexOf(terminal)][terminals.indexOf(nextTerminal)];
-                        int nextBucketIndex = (int)(currentBucket/UNIT + (int)Math.ceil(durationToNextTerminal/UNIT));
+                        int nextBucketIndex = (int) Math.ceil((((currentBucket + 1) * UNIT + durationToNextTerminal)) / UNIT) - 1;
                         if (terminalListMap.get(nextTerminal).get(nextBucketIndex) == null) {
                             List<BaseEvent> list = new ArrayList<BaseEvent>();
                             list.add(next);
@@ -240,15 +211,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 sumOfDelayedContainers += container.getSize();
                         }
                         Animation animation = new Animation();
-                        animation.setInitialTerminal(terminal);
-                        animation.setFinalTerminal(entry.getKey());
-                        animation.setDuration(MILLISECOND * (shortestDurationsMatrix[terminals.indexOf(terminal)][terminals.indexOf(entry.getKey())] / TIME_SCALE));
-                        int offset = (int) TimeUnit.MILLISECONDS.toMinutes(nowInTerminal.get(entry.getKey()).get(0).getArrivalTime().getTime() - startDate.getTime());
-                        offset = (int) (offset / TIME_SCALE);
-                        animation.setOffset(offset * MILLISECOND);
                         if (sumOfDelayedContainers != 0) {
                             animation.setCountOfTrucks((int) Math.ceil(sumOfDelayedContainers / TRUCK_CAPACITY));
+                            animation.setInitialTerminal(terminal);
+                            animation.setFinalTerminal(entry.getKey());
                             animation.setIsDelayedAnim(true);
+                            animation.setDuration(MILLISECOND * (shortestDurationsMatrix[terminals.indexOf(terminal)][terminals.indexOf(entry.getKey())] / TIME_SCALE));
+                            int offset = (int) TimeUnit.MILLISECONDS.toMinutes(nowInTerminal.get(entry.getKey()).get(0).getArrivalTime().getTime() - startDate.getTime());
+                            offset = (int) (offset / TIME_SCALE);
+                            animation.setOffset(offset * MILLISECOND);
                             animationList.add(animation);
                         }
                         if (sumOfDelayedContainers != sumOfContainers) {
@@ -257,8 +228,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             animationList.add(animation);
                         }
 
+
                         Truck truck = new Truck();
-                        // as initial and final terminals are the same for all containers
+                        // as containers' initial and final terminals are the same,
                         // to set truck's arrival can use arrival time of any  container let's 0 as it's exists for sure
                         truck.setArrivalTime(new java.sql.Date(nowInTerminal.get(entry.getKey()).get(0).getArrivalTime().getTime()));
                         truck.setInitialTerminal(terminal);
@@ -275,12 +247,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
             Log.d("currentBucket", currentBucket + "");
+
             currentBucket += UNIT;
 
         }
-        Log.d("truckCount", truckList.size() + "");
 
-
+        Log.d("trucks", truckList + "");
+        for (Truck truck : truckList) {
+            Log.d("dsfj;ds;", truck.getArrivalTime() + "");
+        }
     }
 
 
@@ -301,55 +276,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-
-    @Override
-    public void onTaskCompleted(List<PolylineOptions> polyLines) {
-        Log.d("completed", polyLines.toString());
-        this.poliLines = polyLines;
-        for (PolylineOptions polylineOptions : polyLines) {
-            mMap.addPolyline(polylineOptions);
-        }
-        showTruckMotion();
-    }
-
-    class TruckAnimation implements Runnable {
-        private static final float STEP = 100;
-        long duration;
-        Marker truckMarker;
-        List<LatLng> points;
-        int currentStep = 0;
-        int timeInterval;
-
-        TruckAnimation(GraphEdge edge, int duration, int countOfTrucks, BitmapDescriptor truck) {
-            this.duration = duration;
-            truckMarker = createMarker(truck, edge.getStartPoint().getLatitude(), edge.getStartPoint().getLongitude(), countOfTrucks + "");
-            truckMarker.showInfoWindow();
-            points = poliLines.get(graphEdges.indexOf(edge)).getPoints();
-            timeInterval = (int) (duration / (points.size() / STEP));
-        }
-
-        @Override
-        public void run() {
-            truckMarker.setPosition(points.get(currentStep));
-            currentStep += STEP;
-            if (currentStep <= points.size())
-                animHandler.postDelayed(this, timeInterval);
-            // else
-            //   truckMarker.setVisible(false);
-        }
-    }
-
-    private void showTruckMotion() {
-        animHandler = new Handler();
-        for (Animation animInfo : animationList) {
-            BitmapDescriptor icon = animInfo.isDelayedAnim() ? BitmapDescriptorFactory.fromBitmap(delayedTruckBitmap) : BitmapDescriptorFactory.fromBitmap(truckBitmap);
-            TruckAnimation anim = new TruckAnimation(new GraphEdge(animInfo.getInitialTerminal(), animInfo.getFinalTerminal()),
-                    (int) animInfo.getDuration(), animInfo.getCountOfTrucks(), icon);
-            animHandler.postDelayed(anim, animInfo.getOffset());
-        }
-    }
-
-
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
@@ -359,11 +285,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
      */
-
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
 
-    }
 
+    }
 }

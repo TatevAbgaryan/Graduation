@@ -1,7 +1,5 @@
 package graduation.tatev.myapplication.components;
 
-import java.util.Objects;
-
 public class GraphEdge {
 
     private Terminal startPoint;
@@ -39,13 +37,5 @@ public class GraphEdge {
         if (!this.endPoint.equals(((GraphEdge) obj).endPoint) && !this.endPoint.equals(((GraphEdge) obj).startPoint))
             return false;
         return true;
-    }
-    @Override
-    public int hashCode(){
-        int result = 17;
-        result = 31 * result + endPoint.hashCode();
-        result = 31 * result + startPoint.hashCode();
-        return result;
-       // return Objects.hashCode(this);
     }
 }
